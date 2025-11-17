@@ -1665,6 +1665,33 @@ func overrideGeocode(address string) (lat, lng float64, ok bool) {
 		return 45.383568, -75.753030, true
 	case strings.HasPrefix(address, "2020 Ogilvie R"):
 		return 45.437895, -75.601600, true
+	case strings.HasPrefix(address, "2785 8th L"):
+		return 45.229823, -75.469482, true
+	case strings.HasPrefix(address, "33 Quill S"):
+		return 45.425529, -75.657071, true
+	case strings.HasPrefix(address, "43 Ste-Cécile S"),
+		strings.HasPrefix(address, "43 Ste-Cecile S"):
+		return 45.442452, -75.669347, true
+	case strings.HasPrefix(address, "100 Malvern D"):
+		return 45.280567, -75.762655, true
+	case strings.HasPrefix(address, "76 Larkin D"):
+		return 45.282407, -75.763031, true
+	case strings.HasPrefix(address, "700 Longfields D"):
+		return 45.282065, -75.742435, true
+	case strings.HasPrefix(address, "220 Stoneway D"):
+		return 45.288142, -75.715937, true
+	case strings.HasPrefix(address, "30 Wessex R"):
+		return 45.273476, -75.752423, true
+	case strings.HasPrefix(address, "3320 Paul Anka D"):
+		return 45.352039, -75.672722, true
+	case strings.HasPrefix(address, "363 Lorry Greenberg D"):
+		return 45.363243, -75.635079, true
+	case strings.HasPrefix(address, "40 Cobourg S"):
+		return 45.434824, -75.681088, true
+	case strings.HasPrefix(address, "172 Guigues A"):
+		return 45.432156, -75.691234, true
+	case strings.HasPrefix(address, "180 Percy S"):
+		return 45.409330, -75.701720, true
 	}
 	return 0, 0, false
 }
