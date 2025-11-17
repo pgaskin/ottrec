@@ -471,6 +471,21 @@ func export(pb *schema.Data) error {
 //   - Pelias is better than Geocodio at choosing a point near the entrance instead of somewhere on the property.
 //   - For incorrect street names, Geocodio is better at resolving them based on the postal code, but Pelias just ignores the street and chooses somewhere seemingly random.
 func geocode(ctx context.Context, addr string) (lng, lat float64, attrib string, ok bool, err error) {
+	defer func() {
+		if lat2, lng2, ok2 := overrideGeocode(addr); ok2 { // do it after the fetch so we at least have it cached for comparison later
+			var old slog.Attr
+			if err != nil {
+				old = slog.Group("old", "ok", false, "error", err)
+			} else if !ok {
+				old = slog.Group("old", "ok", false)
+			} else {
+				old = slog.Group("old", "ok", true, "lat", lat, "lng", lng, "attrib", attrib)
+			}
+			slog.LogAttrs(ctx, slog.LevelInfo, "overriding geocode result", old, slog.Group("new", "lat", lat2, "lng", lng2))
+			lat, lng, attrib, ok, err = lat2, lng2, "", true, nil
+		}
+	}()
+
 	u := &url.URL{
 		Scheme: "https",
 		Host:   "api.geocod.io",
@@ -1560,6 +1575,47 @@ func stringsCutFirst(s string, sep ...string) (before, after string, ok bool) {
 		return s[:si], s[si+sn:], true
 	}
 	return s, "", false
+}
+
+// overrideGeocode contains manual overrides for geocoding certain addresses.
+func overrideGeocode(address string) (lat, lng float64, ok bool) {
+	switch {
+	case strings.Contains(address, "8720 Russell R"):
+		return 45.383679, -75.337301, true
+	case strings.Contains(address, "262 Len Purcell D"):
+		return 45.499120, -76.093510, true
+	case strings.Contains(address, "61 Corkstown R"):
+		return 45.346026, -75.827210, true
+	case strings.Contains(address, "200 Glen Park D"):
+		return 45.430386, -75.563095, true
+	case strings.Contains(address, "5660 Osgoode Main S"):
+		return 45.146788, -75.601946, true
+	case strings.Contains(address, "3832 Carp R"):
+		return 45.349095, -76.039116, true
+	case strings.Contains(address, "100 Brewer W"):
+		return 45.389584, -75.691586, true
+	case strings.Contains(address, "2100 Cabot S"):
+		return 45.389751, -75.672654, true
+	case strings.Contains(address, "930 Somerset S"):
+		return 45.407935, -75.715016, true
+	case strings.Contains(address, "250 Somerset S"):
+		return 45.422913, -75.677798, true
+	case strings.Contains(address, "4355 Halmont D"):
+		return 45.428983, -75.619521, true
+	case strings.Contains(address, "525 Côté S"),
+		strings.Contains(address, "525 Cote S"):
+		return 45.436256, -75.647392, true
+	case strings.Contains(address, "43 Ste-Cécile S"),
+		strings.Contains(address, "43 Ste-Cecile S"):
+		return 45.442317, -75.669267, true
+	case strings.Contains(address, "100 Thornwood R"):
+		return 45.450844, -75.657186, true
+	case strings.Contains(address, "679 Deancourt C"):
+		return 45.481213, -75.487425, true
+	case strings.Contains(address, "941 Clyde A"):
+		return 45.374731, -75.746711, true
+	}
+	return 0, 0, false
 }
 
 func ptrTo[T any](x T) *T {
