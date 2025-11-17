@@ -1580,40 +1580,91 @@ func stringsCutFirst(s string, sep ...string) (before, after string, ok bool) {
 // overrideGeocode contains manual overrides for geocoding certain addresses.
 func overrideGeocode(address string) (lat, lng float64, ok bool) {
 	switch {
-	case strings.Contains(address, "8720 Russell R"):
+	case strings.HasPrefix(address, "8720 Russell R"):
 		return 45.383679, -75.337301, true
-	case strings.Contains(address, "262 Len Purcell D"):
+	case strings.HasPrefix(address, "262 Len Purcell D"):
 		return 45.499120, -76.093510, true
-	case strings.Contains(address, "61 Corkstown R"):
+	case strings.HasPrefix(address, "61 Corkstown R"):
 		return 45.346026, -75.827210, true
-	case strings.Contains(address, "200 Glen Park D"):
+	case strings.HasPrefix(address, "200 Glen Park D"):
 		return 45.430386, -75.563095, true
-	case strings.Contains(address, "5660 Osgoode Main S"):
+	case strings.HasPrefix(address, "5660 Osgoode Main S"):
 		return 45.146788, -75.601946, true
-	case strings.Contains(address, "3832 Carp R"):
+	case strings.HasPrefix(address, "3832 Carp R"):
 		return 45.349095, -76.039116, true
-	case strings.Contains(address, "100 Brewer W"):
+	case strings.HasPrefix(address, "100 Brewer W"):
 		return 45.389584, -75.691586, true
-	case strings.Contains(address, "2100 Cabot S"):
+	case strings.HasPrefix(address, "2100 Cabot S"):
 		return 45.389751, -75.672654, true
-	case strings.Contains(address, "930 Somerset S"):
+	case strings.HasPrefix(address, "930 Somerset S"):
 		return 45.407935, -75.715016, true
-	case strings.Contains(address, "250 Somerset S"):
+	case strings.HasPrefix(address, "250 Somerset S"):
 		return 45.422913, -75.677798, true
-	case strings.Contains(address, "4355 Halmont D"):
+	case strings.HasPrefix(address, "4355 Halmont D"):
 		return 45.428983, -75.619521, true
-	case strings.Contains(address, "525 Côté S"),
-		strings.Contains(address, "525 Cote S"):
+	case strings.HasPrefix(address, "525 Côté S"),
+		strings.HasPrefix(address, "525 Cote S"):
 		return 45.436256, -75.647392, true
-	case strings.Contains(address, "43 Ste-Cécile S"),
-		strings.Contains(address, "43 Ste-Cecile S"):
+	case strings.HasPrefix(address, "43 Ste-Cécile S"),
+		strings.HasPrefix(address, "43 Ste-Cecile S"):
 		return 45.442317, -75.669267, true
-	case strings.Contains(address, "100 Thornwood R"):
+	case strings.HasPrefix(address, "100 Thornwood R"):
 		return 45.450844, -75.657186, true
-	case strings.Contains(address, "679 Deancourt C"):
+	case strings.HasPrefix(address, "679 Deancourt C"):
 		return 45.481213, -75.487425, true
-	case strings.Contains(address, "941 Clyde A"):
+	case strings.HasPrefix(address, "941 Clyde A"):
 		return 45.374731, -75.746711, true
+	case strings.HasPrefix(address, "4101 Innovation D"):
+		return 45.340658, -75.930318, true
+	case strings.HasPrefix(address, "2500 Campeau D"):
+		return 45.321031, -75.895366, true
+	case strings.HasPrefix(address, "70 Aird P"):
+		return 45.311064, -75.899304, true
+	case strings.HasPrefix(address, "100 Charlie Rogers P"):
+		return 45.294674, -75.901236, true
+	case strings.HasPrefix(address, "1500 Shea R"):
+		return 45.263569, -75.907577, true
+	case strings.HasPrefix(address, "63 Bluegrass D"):
+		return 45.284940, -75.860978, true
+	case strings.HasPrefix(address, "175 Woodridge C"):
+		return 45.351160, -75.809290, true
+	case strings.HasPrefix(address, "3080 Richmond R"):
+		return 45.349060, -75.802071, true
+	case strings.HasPrefix(address, "1065 Ramsey C"):
+		return 45.349765, -75.794394, true
+	case strings.HasPrefix(address, "960 Silver S"):
+		return 45.380541, -75.731437, true
+	case strings.HasPrefix(address, "300 Des Pères-Blancs A"),
+		strings.HasPrefix(address, "300 Des Peres-Blancs A"):
+		return 45.443755, -75.659733, true
+	case strings.HasPrefix(address, "1895 Russell R"):
+		return 45.402573, -75.627668, true
+	case strings.HasPrefix(address, "1606 Old Wellington S"):
+		return 45.149144, -75.648209, true
+	case strings.HasPrefix(address, "2940 Old Montreal R"):
+		return 45.517777, -75.391261, true
+	case strings.HasPrefix(address, "1560 Heatherington R"):
+		return 45.373092, -75.648050, true
+	case strings.HasPrefix(address, "1002 Beaverbrook L"):
+		return 45.328732, -75.901498, true
+	case strings.HasPrefix(address, "2915 Haughton A"):
+		return 45.359810, -75.804148, true
+	case strings.HasPrefix(address, "309 McArthur R"):
+		return 45.433199, -75.655559, true
+	case strings.HasPrefix(address, "1490 Youville D"):
+		return 45.466524, -75.545064, true
+	case strings.HasPrefix(address, "2185 Arch S"):
+		return 45.390680, -75.629798, true
+	case strings.HasPrefix(address, "1665 Apeldoorn A"):
+		return 45.359680, -75.703190, true
+	case strings.HasPrefix(address, "345 Richmond R"):
+		return 45.392009, -75.754311, true
+	case strings.HasPrefix(address, "1300 Kitchener A"):
+		return 45.367841, -75.656819, true
+	case strings.HasPrefix(address, "411 Dovercourt A"):
+		return 45.383568, -75.753030, true
+	case strings.HasPrefix(address, "2020 Ogilvie R"):
+		return 45.437895, -75.601600, true
 	}
 	return 0, 0, false
 }
