@@ -1692,6 +1692,57 @@ func overrideGeocode(address string) (lat, lng float64, ok bool) {
 		return 45.432156, -75.691234, true
 	case strings.HasPrefix(address, "180 Percy S"):
 		return 45.409330, -75.701720, true
+	case strings.HasPrefix(address, "250 Holland A"):
+		return 45.395160, -75.730850, true
+	case strings.HasPrefix(address, "2955 Michele D"):
+		return 45.354548, -75.801971, true
+	case strings.HasPrefix(address, "3280 Leitrim R"):
+		return 45.331436, -75.598010, true
+	case strings.HasPrefix(address, "1448 Meadow D"):
+		return 45.261181, -75.557267, true
+	case strings.HasPrefix(address, "1480 Heron R"):
+		return 45.379144, -75.654029, true
+	case strings.HasPrefix(address, "1765 Merivale R"):
+		return 45.341866, -75.727060, true
+	case strings.HasPrefix(address, "1265 Walkley R"):
+		return 45.372931, -75.659437, true
+	case strings.HasPrefix(address, "64 Chimo D"):
+		return 45.310111, -75.889348, true
+	case strings.HasPrefix(address, "3500 Cambrian R"):
+		return 45.252721, -75.734214, true
+	case strings.HasPrefix(address, "1295 Colonial R"):
+		return 45.421007, -75.421648, true
+	case strings.HasPrefix(address, "16 Rowley A"):
+		return 45.349241, -75.741407, true
+	case strings.HasPrefix(address, "1701 Woodroffe A"):
+		switch {
+		case strings.Contains(address, "Entrance 3"): // entrance on the east side
+			return 45.327259, -75.744704, true
+		default:
+			return 45.326930, -75.745970, true
+		}
+	case strings.HasPrefix(address, "61 Main S"):
+		return 45.412904, -75.680013, true
+	case strings.HasPrefix(address, "260 Sunnyside A"):
+		return 45.394822, -75.681748, true
+	case strings.HasPrefix(address, "2250 Torquay A"):
+		return 45.347864, -75.773930, true
+	case strings.HasPrefix(address, "270 Pinhey's Point R"):
+		return 45.440360, -75.953909, true
+	case strings.HasPrefix(address, "1585 Tenth Line R"):
+		return 45.471936, -75.492858, true
+	case strings.HasPrefix(address, "380 Springfield R"):
+		return 45.450758, -75.678536, true
+	case strings.HasPrefix(address, "60 Mann A"):
+		return 45.419661, -75.674476, true
+	case strings.HasPrefix(address, "3380 D'Aoust A"):
+		return 45.349781, -75.636527, true // TODO: is this the right side of the building?
+	case strings.HasPrefix(address, "245 Centrum B"):
+		return 45.480812, -75.511449, true
+	case strings.HasPrefix(address, "30 Woodfield D"):
+		return 45.336538, -75.730462, true
+	case strings.HasPrefix(address, "7950 Lawrence S"):
+		return 45.163279, -75.454785, true
 	}
 	return 0, 0, false
 }
