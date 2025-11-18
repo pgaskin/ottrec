@@ -273,7 +273,20 @@ func run(ctx context.Context) error {
 			}.Build()
 			facilities++
 
-			if !*Geocodio {
+			if lng, lat, ok := manualGeocode(name, address); ok {
+				facility.XLnglat = schema.LngLat_builder{
+					Lat: float32(lat),
+					Lng: float32(lng),
+				}.Build()
+				geoAttrib["© Patrick Gaskin."] = struct{}{}
+				// still geocode it for future reference
+				if *Geocodio {
+					if _, _, _, _, err := geocode(ctx, address); err != nil {
+						slog.Warn("failed to geocode place", "name", name, "address", address, "error", err)
+					}
+				}
+				slog.Info("using manual geocoding result")
+			} else if !*Geocodio {
 				// skip geocoding
 			} else if lng, lat, attrib, hasLngLat, err := geocode(ctx, address); err != nil {
 				slog.Warn("failed to geocode place", "name", name, "address", address, "error", err)
@@ -471,21 +484,6 @@ func export(pb *schema.Data) error {
 //   - Pelias is better than Geocodio at choosing a point near the entrance instead of somewhere on the property.
 //   - For incorrect street names, Geocodio is better at resolving them based on the postal code, but Pelias just ignores the street and chooses somewhere seemingly random.
 func geocode(ctx context.Context, addr string) (lng, lat float64, attrib string, ok bool, err error) {
-	defer func() {
-		if lat2, lng2, ok2 := manualGeocode(addr); ok2 { // do it after the fetch so we at least have it cached for comparison later
-			var old slog.Attr
-			if err != nil {
-				old = slog.Group("old", "ok", false, "error", err)
-			} else if !ok {
-				old = slog.Group("old", "ok", false)
-			} else {
-				old = slog.Group("old", "ok", true, "lat", lat, "lng", lng, "attrib", attrib)
-			}
-			slog.LogAttrs(ctx, slog.LevelInfo, "got manual geocode result", old, slog.Group("new", "lat", lat2, "lng", lng2))
-			lat, lng, attrib, ok, err = lat2, lng2, "© Patrick Gaskin.", true, nil
-		}
-	}()
-
 	u := &url.URL{
 		Scheme: "https",
 		Host:   "api.geocod.io",
@@ -1579,7 +1577,7 @@ func stringsCutFirst(s string, sep ...string) (before, after string, ok bool) {
 
 // manualGeocode contains manual overrides for geocoding certain addresses. The
 // coordinates are generally over the main entrance to each facility.
-func manualGeocode(addr string) (lat, lng float64, ok bool) {
+func manualGeocode(name, addr string) (lat, lng float64, ok bool) {
 	switch {
 	case strings.HasPrefix(addr, "1560 Heatherington R"):
 		return 45.37313, -75.64800, true
@@ -1604,8 +1602,6 @@ func manualGeocode(addr string) (lat, lng float64, ok bool) {
 	case strings.HasPrefix(addr, "2915 Haughton A"):
 		return 45.35996, -75.80413, true
 	case strings.HasPrefix(addr, "101 Centrepointe D"):
-		return 45.34437, -75.76257, true
-	case strings.HasPrefix(addr, "101 Centrepointe D"):
 		return 45.34433, -75.76213, true
 	case strings.HasPrefix(addr, "309 McArthur R"):
 		return 45.43255, -75.65549, true
@@ -1618,7 +1614,12 @@ func manualGeocode(addr string) (lat, lng float64, ok bool) {
 	case strings.HasPrefix(addr, "63 Bluegrass D"):
 		return 45.28498, -75.86099, true
 	case strings.HasPrefix(addr, "2185 Arch S"):
-		return 45.39077, -75.63046, true
+		switch {
+		case strings.Contains(name, "Jim Tubman"):
+			return 45.39004, -75.62967, true
+		default:
+			return 45.39077, -75.63046, true
+		}
 	case strings.HasPrefix(addr, "1500 Shea R"):
 		return 45.26340, -75.90766, true
 	case strings.HasPrefix(addr, "1665 Apeldoorn A"):
@@ -1696,16 +1697,12 @@ func manualGeocode(addr string) (lat, lng float64, ok bool) {
 		return 45.41583, -75.68942, true
 	case strings.HasPrefix(addr, "1265 Walkley R"):
 		return 45.37293, -75.65943, true
-	case strings.HasPrefix(addr, "2185 Arch S"):
-		return 45.39004, -75.62967, true
 	case strings.HasPrefix(addr, "2500 Campeau D"):
 		return 45.32146, -75.89541, true
 	case strings.HasPrefix(addr, "10 Warner-Colpitts L"):
 		return 45.26080, -75.92623, true
 	case strings.HasPrefix(addr, "70 Aird P"):
 		return 45.31114, -75.89922, true
-	case strings.HasPrefix(addr, "2500 Campeau D"):
-		return 45.32120, -75.89610, true
 	case strings.HasPrefix(addr, "1606 Old Wellington S"):
 		return 45.14902, -75.64814, true
 	case strings.HasPrefix(addr, "64 Chimo D"):
@@ -1732,8 +1729,6 @@ func manualGeocode(addr string) (lat, lng float64, ok bool) {
 		return 45.33017, -75.76112, true
 	case strings.HasPrefix(addr, "180 Percy S"):
 		return 45.40931, -75.70174, true
-	case strings.HasPrefix(addr, "101 Centrepointe D"):
-		return 45.34433, -75.76214, true
 	case strings.HasPrefix(addr, "2785 8th L"):
 		return 45.22967, -75.46917, true
 	case strings.HasPrefix(addr, "2955 Michele D"):
