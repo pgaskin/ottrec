@@ -472,7 +472,7 @@ func export(pb *schema.Data) error {
 //   - For incorrect street names, Geocodio is better at resolving them based on the postal code, but Pelias just ignores the street and chooses somewhere seemingly random.
 func geocode(ctx context.Context, addr string) (lng, lat float64, attrib string, ok bool, err error) {
 	defer func() {
-		if lat2, lng2, ok2 := overrideGeocode(addr); ok2 { // do it after the fetch so we at least have it cached for comparison later
+		if lat2, lng2, ok2 := manualGeocode(addr); ok2 { // do it after the fetch so we at least have it cached for comparison later
 			var old slog.Attr
 			if err != nil {
 				old = slog.Group("old", "ok", false, "error", err)
@@ -481,8 +481,8 @@ func geocode(ctx context.Context, addr string) (lng, lat float64, attrib string,
 			} else {
 				old = slog.Group("old", "ok", true, "lat", lat, "lng", lng, "attrib", attrib)
 			}
-			slog.LogAttrs(ctx, slog.LevelInfo, "overriding geocode result", old, slog.Group("new", "lat", lat2, "lng", lng2))
-			lat, lng, attrib, ok, err = lat2, lng2, "", true, nil
+			slog.LogAttrs(ctx, slog.LevelInfo, "got manual geocode result", old, slog.Group("new", "lat", lat2, "lng", lng2))
+			lat, lng, attrib, ok, err = lat2, lng2, "© Patrick Gaskin.", true, nil
 		}
 	}()
 
@@ -1577,172 +1577,250 @@ func stringsCutFirst(s string, sep ...string) (before, after string, ok bool) {
 	return s, "", false
 }
 
-// overrideGeocode contains manual overrides for geocoding certain addresses.
-func overrideGeocode(address string) (lat, lng float64, ok bool) {
+// manualGeocode contains manual overrides for geocoding certain addresses. The
+// coordinates are generally over the main entrance to each facility.
+func manualGeocode(addr string) (lat, lng float64, ok bool) {
 	switch {
-	case strings.HasPrefix(address, "8720 Russell R"):
-		return 45.383679, -75.337301, true
-	case strings.HasPrefix(address, "262 Len Purcell D"):
-		return 45.499120, -76.093510, true
-	case strings.HasPrefix(address, "61 Corkstown R"):
-		return 45.346026, -75.827210, true
-	case strings.HasPrefix(address, "200 Glen Park D"):
-		return 45.430386, -75.563095, true
-	case strings.HasPrefix(address, "5660 Osgoode Main S"):
-		return 45.146788, -75.601946, true
-	case strings.HasPrefix(address, "3832 Carp R"):
-		return 45.349095, -76.039116, true
-	case strings.HasPrefix(address, "100 Brewer W"):
-		return 45.389584, -75.691586, true
-	case strings.HasPrefix(address, "2100 Cabot S"):
-		return 45.389751, -75.672654, true
-	case strings.HasPrefix(address, "930 Somerset S"):
-		return 45.407935, -75.715016, true
-	case strings.HasPrefix(address, "250 Somerset S"):
-		return 45.422913, -75.677798, true
-	case strings.HasPrefix(address, "4355 Halmont D"):
-		return 45.428983, -75.619521, true
-	case strings.HasPrefix(address, "525 Côté S"),
-		strings.HasPrefix(address, "525 Cote S"):
-		return 45.436256, -75.647392, true
-	case strings.HasPrefix(address, "43 Ste-Cécile S"),
-		strings.HasPrefix(address, "43 Ste-Cecile S"):
-		return 45.442317, -75.669267, true
-	case strings.HasPrefix(address, "100 Thornwood R"):
-		return 45.450844, -75.657186, true
-	case strings.HasPrefix(address, "679 Deancourt C"):
-		return 45.481213, -75.487425, true
-	case strings.HasPrefix(address, "941 Clyde A"):
-		return 45.374731, -75.746711, true
-	case strings.HasPrefix(address, "4101 Innovation D"):
-		return 45.340658, -75.930318, true
-	case strings.HasPrefix(address, "2500 Campeau D"):
-		return 45.321031, -75.895366, true
-	case strings.HasPrefix(address, "70 Aird P"):
-		return 45.311064, -75.899304, true
-	case strings.HasPrefix(address, "100 Charlie Rogers P"):
-		return 45.294674, -75.901236, true
-	case strings.HasPrefix(address, "1500 Shea R"):
-		return 45.263569, -75.907577, true
-	case strings.HasPrefix(address, "63 Bluegrass D"):
-		return 45.284940, -75.860978, true
-	case strings.HasPrefix(address, "175 Woodridge C"):
-		return 45.351160, -75.809290, true
-	case strings.HasPrefix(address, "3080 Richmond R"):
-		return 45.349060, -75.802071, true
-	case strings.HasPrefix(address, "1065 Ramsey C"):
-		return 45.349765, -75.794394, true
-	case strings.HasPrefix(address, "960 Silver S"):
-		return 45.380541, -75.731437, true
-	case strings.HasPrefix(address, "300 Des Pères-Blancs A"),
-		strings.HasPrefix(address, "300 Des Peres-Blancs A"):
-		return 45.443755, -75.659733, true
-	case strings.HasPrefix(address, "1895 Russell R"):
-		return 45.402573, -75.627668, true
-	case strings.HasPrefix(address, "1606 Old Wellington S"):
-		return 45.149144, -75.648209, true
-	case strings.HasPrefix(address, "2940 Old Montreal R"):
-		return 45.517777, -75.391261, true
-	case strings.HasPrefix(address, "1560 Heatherington R"):
-		return 45.373092, -75.648050, true
-	case strings.HasPrefix(address, "1002 Beaverbrook L"):
-		return 45.328732, -75.901498, true
-	case strings.HasPrefix(address, "2915 Haughton A"):
-		return 45.359810, -75.804148, true
-	case strings.HasPrefix(address, "309 McArthur R"):
-		return 45.433199, -75.655559, true
-	case strings.HasPrefix(address, "1490 Youville D"):
-		return 45.466524, -75.545064, true
-	case strings.HasPrefix(address, "2185 Arch S"):
-		return 45.390680, -75.629798, true
-	case strings.HasPrefix(address, "1665 Apeldoorn A"):
-		return 45.359680, -75.703190, true
-	case strings.HasPrefix(address, "345 Richmond R"):
-		return 45.392009, -75.754311, true
-	case strings.HasPrefix(address, "1300 Kitchener A"):
-		return 45.367841, -75.656819, true
-	case strings.HasPrefix(address, "411 Dovercourt A"):
-		return 45.383568, -75.753030, true
-	case strings.HasPrefix(address, "2020 Ogilvie R"):
-		return 45.437895, -75.601600, true
-	case strings.HasPrefix(address, "2785 8th L"):
-		return 45.229823, -75.469482, true
-	case strings.HasPrefix(address, "33 Quill S"):
-		return 45.425529, -75.657071, true
-	case strings.HasPrefix(address, "43 Ste-Cécile S"),
-		strings.HasPrefix(address, "43 Ste-Cecile S"):
-		return 45.442452, -75.669347, true
-	case strings.HasPrefix(address, "100 Malvern D"):
-		return 45.280567, -75.762655, true
-	case strings.HasPrefix(address, "76 Larkin D"):
-		return 45.282407, -75.763031, true
-	case strings.HasPrefix(address, "700 Longfields D"):
-		return 45.282065, -75.742435, true
-	case strings.HasPrefix(address, "220 Stoneway D"):
-		return 45.288142, -75.715937, true
-	case strings.HasPrefix(address, "30 Wessex R"):
-		return 45.273476, -75.752423, true
-	case strings.HasPrefix(address, "3320 Paul Anka D"):
-		return 45.352039, -75.672722, true
-	case strings.HasPrefix(address, "363 Lorry Greenberg D"):
-		return 45.363243, -75.635079, true
-	case strings.HasPrefix(address, "40 Cobourg S"):
-		return 45.434824, -75.681088, true
-	case strings.HasPrefix(address, "172 Guigues A"):
-		return 45.432156, -75.691234, true
-	case strings.HasPrefix(address, "180 Percy S"):
-		return 45.409330, -75.701720, true
-	case strings.HasPrefix(address, "250 Holland A"):
-		return 45.395160, -75.730850, true
-	case strings.HasPrefix(address, "2955 Michele D"):
-		return 45.354548, -75.801971, true
-	case strings.HasPrefix(address, "3280 Leitrim R"):
-		return 45.331436, -75.598010, true
-	case strings.HasPrefix(address, "1448 Meadow D"):
-		return 45.261181, -75.557267, true
-	case strings.HasPrefix(address, "1480 Heron R"):
-		return 45.379144, -75.654029, true
-	case strings.HasPrefix(address, "1765 Merivale R"):
-		return 45.341866, -75.727060, true
-	case strings.HasPrefix(address, "1265 Walkley R"):
-		return 45.372931, -75.659437, true
-	case strings.HasPrefix(address, "64 Chimo D"):
-		return 45.310111, -75.889348, true
-	case strings.HasPrefix(address, "3500 Cambrian R"):
-		return 45.252721, -75.734214, true
-	case strings.HasPrefix(address, "1295 Colonial R"):
-		return 45.421007, -75.421648, true
-	case strings.HasPrefix(address, "16 Rowley A"):
-		return 45.349241, -75.741407, true
-	case strings.HasPrefix(address, "1701 Woodroffe A"):
+	case strings.HasPrefix(addr, "1560 Heatherington R"):
+		return 45.37313, -75.64800, true
+	case strings.HasPrefix(addr, "960 Silver S"):
+		return 45.38058, -75.73129, true
+	case strings.HasPrefix(addr, "2300 Community W"):
+		return 45.13019, -75.71086, true
+	case strings.HasPrefix(addr, "318 Aquaview D"):
+		return 45.45308, -75.47793, true
+	case strings.HasPrefix(addr, "175 Woodridge C"):
+		return 45.35113, -75.80940, true
+	case strings.HasPrefix(addr, "2130 Radford C"):
+		return 45.45895, -75.59895, true
+	case strings.HasPrefix(addr, "8720 Russell R"):
+		return 45.38362, -75.33728, true
+	case strings.HasPrefix(addr, "2679 Innes R"):
+		return 45.43419, -75.56348, true
+	case strings.HasPrefix(addr, "1002 Beaverbrook L"):
+		return 45.32894, -75.90115, true
+	case strings.HasPrefix(addr, "50 Cassidy R"):
+		return 45.32489, -75.81070, true
+	case strings.HasPrefix(addr, "2915 Haughton A"):
+		return 45.35996, -75.80413, true
+	case strings.HasPrefix(addr, "101 Centrepointe D"):
+		return 45.34437, -75.76257, true
+	case strings.HasPrefix(addr, "101 Centrepointe D"):
+		return 45.34433, -75.76213, true
+	case strings.HasPrefix(addr, "309 McArthur R"):
+		return 45.43255, -75.65549, true
+	case strings.HasPrefix(addr, "2100 Cabot S"):
+		return 45.38970, -75.67267, true
+	case strings.HasPrefix(addr, "1490 Youville D"):
+		return 45.46641, -75.54499, true
+	case strings.HasPrefix(addr, "100 Brewer W"):
+		return 45.38947, -75.69154, true
+	case strings.HasPrefix(addr, "63 Bluegrass D"):
+		return 45.28498, -75.86099, true
+	case strings.HasPrefix(addr, "2185 Arch S"):
+		return 45.39077, -75.63046, true
+	case strings.HasPrefix(addr, "1500 Shea R"):
+		return 45.26340, -75.90766, true
+	case strings.HasPrefix(addr, "1665 Apeldoorn A"):
+		return 45.35941, -75.70299, true
+	case strings.HasPrefix(addr, "1520 Caldwell A"):
+		return 45.37245, -75.73895, true
+	case strings.HasPrefix(addr, "321 King Edward A"):
+		return 45.43060, -75.68696, true
+	case strings.HasPrefix(addr, "424 Chapman Mills D"):
+		return 45.27210, -75.72315, true
+	case strings.HasPrefix(addr, "30 Wessex R"):
+		return 45.27344, -75.75230, true
+	case strings.HasPrefix(addr, "345 Richmond R"):
+		return 45.39202, -75.75434, true
+	case strings.HasPrefix(addr, "262 Len Purcell D"):
+		return 45.49924, -76.09345, true
+	case strings.HasPrefix(addr, "61 Corkstown R"):
+		return 45.34605, -75.82720, true
+	case strings.HasPrefix(addr, "56 Fieldrow S"):
+		return 45.34445, -75.73781, true
+	case strings.HasPrefix(addr, "2940 Old Montreal R"):
+		return 45.51783, -75.39114, true
+	case strings.HasPrefix(addr, "1300 Kitchener A"):
+		return 45.36755, -75.65724, true
+	case strings.HasPrefix(addr, "1895 Russell R"):
+		return 45.40259, -75.62747, true
+	case strings.HasPrefix(addr, "363 Lorry Greenberg D"):
+		return 45.36327, -75.63532, true
+	case strings.HasPrefix(addr, "411 Dovercourt A"):
+		return 45.38333, -75.75285, true
+	case strings.HasPrefix(addr, "2020 Ogilvie R"):
+		return 45.43780, -75.60174, true
+	case strings.HasPrefix(addr, "2 Eaton S"):
+		return 45.32643, -75.81681, true
+	case strings.HasPrefix(addr, "65 Stonehaven D"):
+		return 45.29050, -75.85773, true
+	case strings.HasPrefix(addr, "3080 Richmond R"):
+		return 45.34906, -75.80216, true
+	case strings.HasPrefix(addr, "679 Deancourt C"):
+		return 45.48141, -75.48676, true
+	case strings.HasPrefix(addr, "250 Holland A"):
+		return 45.39516, -75.73087, true
+	case strings.HasPrefix(addr, "1065 Ramsey C"):
+		return 45.34967, -75.79442, true
+	case strings.HasPrefix(addr, "2263 Portobello B"):
+		return 45.45421, -75.46367, true
+	case strings.HasPrefix(addr, "3280 Leitrim R"):
+		return 45.33142, -75.59795, true
+	case strings.HasPrefix(addr, "107 Chesterton D"):
+		return 45.35168, -75.72046, true
+	case strings.HasPrefix(addr, "43 Ste-Cécile S"),
+		strings.HasPrefix(addr, "43 Ste-Cecile S"):
+		return 45.44236, -75.66932, true
+	case strings.HasPrefix(addr, "175 Third A"):
+		return 45.40211, -75.69145, true
+	case strings.HasPrefix(addr, "186 Morrena R"):
+		return 45.29608, -75.88526, true
+	case strings.HasPrefix(addr, "70 Castlefrank R"):
+		return 45.29534, -75.88503, true
+	case strings.HasPrefix(addr, "1448 Meadow D"):
+		return 45.26116, -75.55728, true
+	case strings.HasPrefix(addr, "1480 Heron R"):
+		return 45.37910, -75.65403, true
+	case strings.HasPrefix(addr, "1064 Wellington Street W"):
+		return 45.40368, -75.72448, true
+	case strings.HasPrefix(addr, "1765 Merivale R"):
+		return 45.34190, -75.72700, true
+	case strings.HasPrefix(addr, "3320 Paul Anka D"):
+		return 45.35191, -75.67276, true
+	case strings.HasPrefix(addr, "941 Clyde A"):
+		return 45.37477, -75.74637, true
+	case strings.HasPrefix(addr, "10 McKitrick D"):
+		return 45.29375, -75.88425, true
+	case strings.HasPrefix(addr, "320 Jack Purcell L"):
+		return 45.41583, -75.68942, true
+	case strings.HasPrefix(addr, "1265 Walkley R"):
+		return 45.37293, -75.65943, true
+	case strings.HasPrefix(addr, "2185 Arch S"):
+		return 45.39004, -75.62967, true
+	case strings.HasPrefix(addr, "2500 Campeau D"):
+		return 45.32146, -75.89541, true
+	case strings.HasPrefix(addr, "10 Warner-Colpitts L"):
+		return 45.26080, -75.92623, true
+	case strings.HasPrefix(addr, "70 Aird P"):
+		return 45.31114, -75.89922, true
+	case strings.HasPrefix(addr, "2500 Campeau D"):
+		return 45.32120, -75.89610, true
+	case strings.HasPrefix(addr, "1606 Old Wellington S"):
+		return 45.14902, -75.64814, true
+	case strings.HasPrefix(addr, "64 Chimo D"):
+		return 45.31015, -75.88949, true
+	case strings.HasPrefix(addr, "700 Longfields D"):
+		return 45.28203, -75.74239, true
+	case strings.HasPrefix(addr, "3242 York's Corners R"):
+		return 45.22914, -75.41541, true
+	case strings.HasPrefix(addr, "1525 Princess P"):
+		return 45.40075, -75.68236, true
+	case strings.HasPrefix(addr, "76 Larkin D"):
+		return 45.28249, -75.76286, true
+	case strings.HasPrefix(addr, "15 Rockcliffe W"):
+		return 45.44447, -75.67495, true
+	case strings.HasPrefix(addr, "200 Glen Park D"):
+		return 45.43011, -75.56333, true
+	case strings.HasPrefix(addr, "40 Cobourg S"):
+		return 45.43464, -75.68127, true
+	case strings.HasPrefix(addr, "100 Thornwood R"):
+		return 45.45092, -75.65706, true
+	case strings.HasPrefix(addr, "5572 Doctor Leach D"):
+		return 45.22229, -75.68659, true
+	case strings.HasPrefix(addr, "68 Knoxdale R"):
+		return 45.33017, -75.76112, true
+	case strings.HasPrefix(addr, "180 Percy S"):
+		return 45.40931, -75.70174, true
+	case strings.HasPrefix(addr, "101 Centrepointe D"):
+		return 45.34433, -75.76214, true
+	case strings.HasPrefix(addr, "2785 8th L"):
+		return 45.22967, -75.46917, true
+	case strings.HasPrefix(addr, "2955 Michele D"):
+		return 45.35457, -75.80198, true
+	case strings.HasPrefix(addr, "3500 Cambrian R"):
+		return 45.25277, -75.73427, true
+	case strings.HasPrefix(addr, "1295 Colonial R"):
+		return 45.42134, -75.42137, true
+	case strings.HasPrefix(addr, "35 Stafford R"):
+		return 45.32875, -75.82226, true
+	case strings.HasPrefix(addr, "16 Rowley A"):
+		return 45.34923, -75.74144, true
+	case strings.HasPrefix(addr, "1701 Woodroffe A"):
 		switch {
-		case strings.Contains(address, "Entrance 3"): // entrance on the east side
+		case strings.Contains(addr, "Entrance 3"): // entrance on the east side
 			return 45.327259, -75.744704, true
 		default:
 			return 45.326930, -75.745970, true
 		}
-	case strings.HasPrefix(address, "61 Main S"):
-		return 45.412904, -75.680013, true
-	case strings.HasPrefix(address, "260 Sunnyside A"):
-		return 45.394822, -75.681748, true
-	case strings.HasPrefix(address, "2250 Torquay A"):
-		return 45.347864, -75.773930, true
-	case strings.HasPrefix(address, "270 Pinhey's Point R"):
-		return 45.440360, -75.953909, true
-	case strings.HasPrefix(address, "1585 Tenth Line R"):
-		return 45.471936, -75.492858, true
-	case strings.HasPrefix(address, "380 Springfield R"):
-		return 45.450758, -75.678536, true
-	case strings.HasPrefix(address, "60 Mann A"):
-		return 45.419661, -75.674476, true
-	case strings.HasPrefix(address, "3380 D'Aoust A"):
-		return 45.349781, -75.636527, true // TODO: is this the right side of the building?
-	case strings.HasPrefix(address, "245 Centrum B"):
-		return 45.480812, -75.511449, true
-	case strings.HasPrefix(address, "30 Woodfield D"):
-		return 45.336538, -75.730462, true
-	case strings.HasPrefix(address, "7950 Lawrence S"):
-		return 45.163279, -75.454785, true
+	case strings.HasPrefix(addr, "61 Main S"):
+		return 45.41291, -75.67999, true
+	case strings.HasPrefix(addr, "5660 Osgoode Main S"):
+		return 45.14708, -75.60236, true
+	case strings.HasPrefix(addr, "260 Sunnyside A"):
+		return 45.39477, -75.68186, true
+	case strings.HasPrefix(addr, "33 Quill S"):
+		return 45.42551, -75.65704, true
+	case strings.HasPrefix(addr, "4355 Halmont D"):
+		return 45.42871, -75.61962, true
+	case strings.HasPrefix(addr, "2250 Torquay A"):
+		return 45.34784, -75.77391, true
+	case strings.HasPrefix(addr, "270 Pinhey's Point R"):
+		return 45.44035, -75.95391, true
+	case strings.HasPrefix(addr, "930 Somerset Street W"):
+		return 45.40784, -75.71481, true
+	case strings.HasPrefix(addr, "1115 Dunning R"):
+		return 45.51445, -75.40368, true
+	case strings.HasPrefix(addr, "1585 Tenth Line R"):
+		return 45.47193, -75.49286, true
+	case strings.HasPrefix(addr, "4101 Innovation D"):
+		return 45.34069, -75.93026, true
+	case strings.HasPrefix(addr, "300 Des Pères-Blancs A"),
+		strings.HasPrefix(addr, "300 Des Peres-Blancs A"):
+		return 45.44386, -75.65978, true
+	case strings.HasPrefix(addr, "6095 Perth S"):
+		return 45.19540, -75.83777, true
+	case strings.HasPrefix(addr, "4310 Shoreline D"):
+		return 45.27732, -75.68748, true
+	case strings.HasPrefix(addr, "380 Springfield R"):
+		return 45.45076, -75.67858, true
+	case strings.HasPrefix(addr, "102 Greenview A"):
+		return 45.36376, -75.80182, true
+	case strings.HasPrefix(addr, "172 Guigues A"):
+		return 45.43217, -75.69127, true
+	case strings.HasPrefix(addr, "60 Mann A"):
+		return 45.41973, -75.67447, true
+	case strings.HasPrefix(addr, "250 Somerset Street E"):
+		return 45.42289, -75.67751, true
+	case strings.HasPrefix(addr, "3380 D'Aoust A"):
+		return 45.34969, -75.63622, true
+	case strings.HasPrefix(addr, "245 Centrum B"):
+		return 45.48059, -75.51152, true
+	case strings.HasPrefix(addr, "998 Valin S"):
+		return 45.47129, -75.46205, true
+	case strings.HasPrefix(addr, "220 Stoneway D"):
+		return 45.28812, -75.71598, true
+	case strings.HasPrefix(addr, "2040 Ogilvie R"):
+		return 45.43741, -75.60067, true
+	case strings.HasPrefix(addr, "525 Côté S"),
+		strings.HasPrefix(addr, "525 Cote S"):
+		return 45.43640, -75.64706, true
+	case strings.HasPrefix(addr, "30 Woodfield D"):
+		return 45.33662, -75.73042, true
+	case strings.HasPrefix(addr, "2960 Riverside D"):
+		return 45.36977, -75.69137, true
+	case strings.HasPrefix(addr, "141 Bayview Station R"):
+		return 45.40779, -75.72285, true
+	case strings.HasPrefix(addr, "100 Charlie Rogers P"):
+		return 45.29458, -75.90132, true
+	case strings.HasPrefix(addr, "7950 Lawrence S"):
+		return 45.16328, -75.45480, true
+	case strings.HasPrefix(addr, "3832 Carp R"):
+		return 45.34921, -76.03922, true
+	case strings.HasPrefix(addr, "100 Malvern D"):
+		return 45.28024, -75.76215, true
+	case strings.HasPrefix(addr, "681 Seyton D"):
+		return 45.31543, -75.83544, true
 	}
 	return 0, 0, false
 }
