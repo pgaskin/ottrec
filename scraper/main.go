@@ -857,11 +857,11 @@ func scrapeScheduleGroup(doc *goquery.Document, facilityName, label string, cont
 	}
 
 	for _, table := range content.Find("table").EachIter() {
-		schedule, xerrs := scrapeSchedule(table, facilityName)
+		schedule, xerrs1 := scrapeSchedule(table, facilityName)
 		if schedule != nil {
 			group.Schedules = append(group.Schedules, schedule)
 		}
-		for _, xerr := range xerrs {
+		for _, xerr := range xerrs1 {
 			xerrs = append(xerrs, fmt.Sprintf("group %q: %s", group.Label, xerr))
 		}
 	}
