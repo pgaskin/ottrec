@@ -150,11 +150,12 @@ jobs:
           -export.pb data/data.pb
           -export.textpb data/data.textpb
           -export.json data/data.json
+          -export.errors errors.txt
 
       - name: Push data
         run: |
           git -C data add . && {
             git -C data diff --cached --quiet ||
-            git -C data commit -m "update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, $(git -C cache rev-parse HEAD))" ; } &&
+            git -C data commit -m "update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, $(git -C cache rev-parse HEAD))"$'\n'"$(<errors.txt)" ; } &&
           git -C data push
         if: ${{ github.repository == 'pgaskin/ottrec' }}

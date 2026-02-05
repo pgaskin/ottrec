@@ -46,6 +46,7 @@ var (
 	ExportPB     = flag.String("export.pb", "", "write binpb to this file")
 	ExportTextPB = flag.String("export.textpb", "", "write textpb to this file")
 	ExportJSON   = flag.String("export.json", "", "write json to this file")
+	ExportErrors = flag.String("export.errors", "", "write human-readable non-fatal scrape errors to this file")
 	ExportPretty = flag.Bool("export.pretty", false, "prettify output (-json -textpb)")
 
 	Cache              = flag.String("cache", "", "cache pages in the specified directory")
@@ -464,6 +465,25 @@ func export(pb *schema.Data) error {
 		}
 		if err := os.WriteFile(name, buf, 0644); err != nil {
 			return fmt.Errorf("json: write: %w", err)
+		}
+	}
+	if name := *ExportErrors; name != "" {
+		slog.Info("exporting errors", "name", name)
+		var b bytes.Buffer
+		for _, f := range pb.GetFacilities() {
+			for i, err := range f.GetXErrors() {
+				if i == 0 {
+					b.WriteString("\n")
+					b.WriteString(f.GetSource().GetUrl())
+					b.WriteString("\n")
+				}
+				b.WriteString("- ")
+				b.WriteString(err)
+				b.WriteString("\n")
+			}
+		}
+		if err := os.WriteFile(name, b.Bytes(), 0644); err != nil {
+			return fmt.Errorf("errors: write: %w", err)
 		}
 	}
 	return nil
