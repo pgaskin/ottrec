@@ -868,6 +868,8 @@ func scrapeScheduleGroup(doc *goquery.Document, facilityName, label string, cont
 	return group.Build(), xerrs
 }
 
+var playFreeRe = regexp.MustCompile(`(?i)\(Play Free\)`)
+
 // scrapeSchedule scrapes a schedule table, returning nil on failure, and
 // returning a slice of warnings/errors from parsing the schedule.
 func scrapeSchedule(table *goquery.Selection, facilityName string) (msg *schema.Schedule, xerrs []string) {
@@ -947,8 +949,10 @@ func scrapeSchedule(table *goquery.Selection, facilityName string) (msg *schema.
 					if wkday == -1 {
 						xerrs = append(xerrs, fmt.Sprintf("warning: failed to parse weekday from header %q", hdr))
 					}
+					timesStr := cell.Text()
+					timesStr = playFreeRe.ReplaceAllString(timesStr, "")
 					times := []*schema.TimeRange{}
-					for t := range strings.FieldsFuncSeq(cell.Text(), func(r rune) bool {
+					for t := range strings.FieldsFuncSeq(timesStr, func(r rune) bool {
 						return r == ','
 					}) {
 						if strings.Map(func(r rune) rune {
