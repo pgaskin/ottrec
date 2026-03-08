@@ -274,7 +274,7 @@ func run(ctx context.Context) error {
 			}.Build()
 			facilities++
 
-			if lng, lat, ok := manualGeocode(name, address); ok {
+			if lat, lng, ok := manualGeocode(name, address); ok {
 				facility.XLnglat = schema.LngLat_builder{
 					Lat: float32(lat),
 					Lng: float32(lng),
