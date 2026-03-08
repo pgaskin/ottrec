@@ -56,4 +56,5 @@ The following links contain the most recent data, updated daily. See [data.ottre
 
 ##### Changes
 
+- **2026-03-08:** Fixed mixed up longitude/latitude affecting data from bc9be9b7098f8daaba3121daa564fcbeb4b85784 (2025-11-18 - 2026-03-09).
 - **2025-10-07:** Initial stable release.
