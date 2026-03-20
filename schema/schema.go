@@ -179,6 +179,14 @@ func MakeDate(year int, month time.Month, day int, wkday time.Weekday) Date {
 	return x
 }
 
+// MakeDateFromGo makes a fully-populated (year, month, day, weekday) [Date]
+// from a Go [time.Time]. If t is [time.Time.IsZero], the [Date] is also
+// [Date.IsZero].
+func MakeDateFromGo(t time.Time) Date {
+	year, month, day := t.Date()
+	return MakeDate(year, month, day, t.Weekday())
+}
+
 // IsZero returns true if d is zero.
 func (d Date) IsZero() bool {
 	return d == 0
@@ -342,6 +350,31 @@ func (d Date) GoString() string {
 	return b.String()
 }
 
+// GoTime returns a Go time value for the date. If the date is invalid or not a
+// complete date with year/month/day, ok is false. If the date is zero, the
+// corresponding time is zero.
+func (d Date) GoTime(loc *time.Location) (time.Time, bool) {
+	if d.IsZero() {
+		return time.Time{}, true
+	}
+	if !d.IsValid() {
+		return time.Time{}, false
+	}
+	year, ok := d.Year()
+	if !ok {
+		return time.Time{}, false
+	}
+	month, ok := d.Month()
+	if !ok {
+		return time.Time{}, false
+	}
+	day, ok := d.Day()
+	if !ok {
+		return time.Time{}, false
+	}
+	return time.Date(year, month, day, 0, 0, 0, 0, loc), true
+}
+
 // DateRange is an inclusive range of dates. Either side may be zero.
 type DateRange struct {
 	From Date
@@ -379,6 +412,20 @@ func (d DateRange) String() string {
 		}
 	}
 	return b.String()
+}
+
+// GoTime returns Go time values for the date range. If either side is invalid
+// or not a complete date with year/month/day, ok is false. If a side is open,
+// the corresponding time is zero. For convenience, the end time is 1 nanosecond
+// before the next day (unlike if you called [Date.GoTime] on the From value
+// directly).
+func (d DateRange) GoTime(loc *time.Location) (from time.Time, to time.Time, ok bool) {
+	from, fromOK := d.From.GoTime(loc)
+	to, toOK := d.To.GoTime(loc)
+	if toOK && !to.IsZero() {
+		to.AddDate(0, 0, 1).Add(-time.Nanosecond)
+	}
+	return from, to, fromOK && toOK
 }
 
 func (tr *TimeRange) AsXParsed() (w time.Weekday, r ClockRange, ok bool) {
