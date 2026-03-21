@@ -891,7 +891,7 @@ func scrapeScheduleGroup(doc *goquery.Document, facilityName, label string, cont
 	return group.Build(), xerrs
 }
 
-var playFreeRe = regexp.MustCompile(`(?i)\(Play Free\)`)
+var playFreeRe = regexp.MustCompile(`(?i)\(?\s*Play\s+Free\s*\)?`)
 
 // scrapeSchedule scrapes a schedule table, returning nil on failure, and
 // returning a slice of warnings/errors from parsing the schedule.
