@@ -1207,12 +1207,12 @@ func parseClockRange(s string) (r schema.ClockRange, ok bool) {
 		return stringsCutFirst(s, "-", "to")
 	}
 
-	parsePart := func(s string, mdef byte) (t schema.ClockTime, m byte, ok bool) {
+	parsePart := func(s string, mdef byte) (t schema.ClockTime, m byte, special, ok bool) {
 		switch s {
 		case "midnight":
-			return schema.MakeClockTime(0, 0), 'a', true // midnight implies am
+			return schema.MakeClockTime(0, 0), 'a', true, true // midnight implies am
 		case "noon":
-			return schema.MakeClockTime(12, 0), 'p', true // noon implies pm
+			return schema.MakeClockTime(12, 0), 'p', true, true // noon implies pm
 		}
 		sh, sm, ok := strings.Cut(s, "h") // french time
 		if !ok {
@@ -1251,15 +1251,15 @@ func parseClockRange(s string) (r schema.ClockRange, ok bool) {
 			}
 		}
 		if len(sh) > 2 || len(sm) > 2 {
-			return 0, 0, false // invalid hour/minute length
+			return 0, 0, false, false // invalid hour/minute length
 		}
 		hh, err := strconv.ParseInt(sh, 10, 0)
 		if err != nil {
-			return 0, 0, false // invalid hour
+			return 0, 0, false, false // invalid hour
 		}
 		if m != 0 {
 			if hh < 1 || hh > 12 {
-				return 0, 0, false // invalid 12h hour
+				return 0, 0, false, false // invalid 12h hour
 			}
 			switch m {
 			case 'p':
@@ -1273,17 +1273,17 @@ func parseClockRange(s string) (r schema.ClockRange, ok bool) {
 			}
 		} else {
 			if hh < 0 || hh > 23 {
-				return 0, 0, false // invalid 24h hour
+				return 0, 0, false, false // invalid 24h hour
 			}
 		}
 		mm, err := strconv.ParseInt(sm, 10, 0)
 		if err != nil {
-			return 0, 0, false // invalid minute
+			return 0, 0, false, false // invalid minute
 		}
 		if mm < 0 || mm > 59 {
-			return 0, 0, false // invalid 24h minute
+			return 0, 0, false, false // invalid 24h minute
 		}
-		return schema.MakeClockTime(int(hh), int(mm)), m, true
+		return schema.MakeClockTime(int(hh), int(mm)), m, false, true
 	}
 
 	if s == "" {
@@ -1308,13 +1308,20 @@ func parseClockRange(s string) (r schema.ClockRange, ok bool) {
 	if s1 == "" || s2 == "" {
 		return r, false // open range
 	}
-	t1, m1, ok := parsePart(s1, 0)
+	t1, m1, sp1, ok := parsePart(s1, 0)
 	if !ok {
 		return r, false // invalid lhs
 	}
-	t2, m2, ok := parsePart(s2, 0)
+	t2, m2, sp2, ok := parsePart(s2, 0)
 	if !ok {
 		return r, false // invalid rhs
+	}
+	if sp1 && (t1 == 0 || t1 == 12*60) && !sp2 && m2 == 0 && (t2%(12*60) < 3*60) {
+		// LHS is noon/midnight and RHS is XX:XX where it's less than 3h after if parsed with corresponding AM/PM
+		t2, m2, sp2 = t2%(12*60), m1, false
+		if m2 == 'p' {
+			t2 += 12 * 60
+		}
 	}
 	if m1 != 0 && m2 == 0 {
 		return r, false // ambiguous lhs 12h and rhs 24h
@@ -1328,11 +1335,12 @@ func parseClockRange(s string) (r schema.ClockRange, ok bool) {
 	if m1 == 0 && m2 != 0 {
 		// only if lhs is before rhs AND the difference is greater than 12h
 		if t1 < t2 && t2-t1 >= 12*60 {
-			t1, m1, ok = parsePart(s1, m2) // reparse lhs with 12h rhs am/pm
+			t1, m1, sp1, ok = parsePart(s1, m2) // reparse lhs with 12h rhs am/pm
 			if !ok {
 				return r, false // lhs hour is now invalid
 			}
 			_ = m1
+			_ = sp1
 		}
 	}
 	if t1 == t2 {

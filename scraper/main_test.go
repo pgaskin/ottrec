@@ -97,7 +97,6 @@ func TestParseClockRange(t *testing.T) {
 
 		// special implies am/pm
 		{"midnight - noon", "00:00 - 12:00"},
-		{"noon-1:00", ""}, // ambiguous
 		{"1:00 - noon", "01:00 - 12:00"},
 		{"1:00 am - noon", "01:00 - 12:00"},
 		{"7:30-noon", "07:30 - 12:00"},
@@ -136,6 +135,22 @@ func TestParseClockRange(t *testing.T) {
 		{"6:00-noon", "06:00 - 12:00"},
 		{"06:00-noon", "06:00 - 12:00"},
 		{"23:00-noon", ""},
+
+		// noon/midnight ambiguous time exception
+		{"noon-12:30", "12:00 - 12:30"},
+		{"noon-1", "12:00 - 13:00"},
+		{"noon-1:30", "12:00 - 13:30"},
+		{"noon-2:30", "12:00 - 14:30"},
+		{"noon-3", ""}, // limit it to 3h for now
+		{"noon-11", ""},
+		{"noon-11:59", ""},
+		{"midnight-12:30", "00:00 - 00:30"},
+		{"midnight-1", "00:00 - 01:00"},
+		{"midnight-1:30", "00:00 - 01:30"},
+		{"midnight-2:30", "00:00 - 02:30"},
+		{"midnight-3", ""}, // limit it to 3h for now
+		{"midnight-11", ""},
+		{"midnight-11:59", ""},
 
 		// misc special
 		{"noon-12:55pm", "12:00 - 12:55"},
@@ -313,7 +328,7 @@ func TestParseClockRangeExhaustive(t *testing.T) {
 		}
 	}
 	sha := sha1.Sum(nbuf)
-	if hex.EncodeToString(sha[:]) != "bb6c9d4fe05284ed3d85bfea35c6a6fb63264fd3" {
+	if hex.EncodeToString(sha[:]) != "13a861e0e6905512d39fb0b36053c424e1056c5e" {
 		t.Errorf("changed: %x", sha)
 	}
 }
