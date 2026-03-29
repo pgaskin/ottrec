@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-//go:generate go run github.com/bufbuild/buf/cmd/buf@v1.57.2 generate --template {"version":"v2","plugins":[{"local":["go","tool","protoc-gen-go"],"out":".","opt":["paths=source_relative","Mschema.proto=./schema","default_api_level=API_OPAQUE"]}]}
+//go:generate go run github.com/bufbuild/buf/cmd/buf@v1.66.1 generate --template {"version":"v2","plugins":[{"local":["go","tool","protoc-gen-go"],"out":".","opt":["paths=source_relative","Mschema.proto=./schema","default_api_level=API_OPAQUE"]}]}
 
 //go:embed schema.proto
 var schema []byte
