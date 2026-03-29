@@ -904,8 +904,8 @@ func scrapeSchedule(table *goquery.Selection, facilityName string) (msg *schema.
 	if ok {
 		schedule.XDate = date
 		if r, ok := parseDateRange(date); ok {
-			schedule.XFrom = ptrTo(int32(r.From))
-			schedule.XTo = ptrTo(int32(r.To))
+			schedule.XFrom = new(int32(r.From))
+			schedule.XTo = new(int32(r.To))
 		} else {
 			xerrs = append(xerrs, fmt.Sprintf("schedule %q: failed to parse date range %q", schedule.Caption, date))
 		}
@@ -953,7 +953,7 @@ func scrapeSchedule(table *goquery.Selection, facilityName string) (msg *schema.
 					activity.Label = normalizeText(cell.Text(), false, false)
 					activity.XName = cleanActivityName(cell.Text())
 					if _, resv, ok := cutReservationRequirement(activity.Label); ok {
-						activity.XResv = ptrTo(resv)
+						activity.XResv = new(resv)
 					}
 				} else {
 					hdr := schedule.Days[i-1]
@@ -989,11 +989,11 @@ func scrapeSchedule(table *goquery.Selection, facilityName string) (msg *schema.
 						var trange schema.TimeRange_builder
 						trange.Label = strings.TrimSpace(normalizeText(t, false, false))
 						if wkday != -1 {
-							trange.XWkday = ptrTo(schema.Weekday(wkday))
+							trange.XWkday = new(schema.Weekday(wkday))
 						}
 						if r, ok := parseClockRange(t); ok {
-							trange.XStart = ptrTo(int32(r.Start))
-							trange.XEnd = ptrTo(int32(r.End))
+							trange.XStart = new(int32(r.Start))
+							trange.XEnd = new(int32(r.End))
 							if r.Start > 24*60 || r.End > 24*60 {
 								slog.Warn("note: time range goes into the next day", "raw", t, "parsed", r)
 							}
@@ -1870,10 +1870,6 @@ func manualGeocode(name, addr string) (lat, lng float64, ok bool) {
 		return 45.31543, -75.83544, true
 	}
 	return 0, 0, false
-}
-
-func ptrTo[T any](x T) *T {
-	return &x
 }
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)

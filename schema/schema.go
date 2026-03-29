@@ -95,7 +95,7 @@ func (t ClockTime) Norm() ClockTime {
 
 func (t ClockTime) GoString() string {
 	var b strings.Builder
-	b.WriteString(reflect.TypeOf(t).String())
+	b.WriteString(reflect.TypeFor[ClockTime]().String())
 	if t < 0 {
 		b.WriteString(strconv.FormatInt(int64(t), 10))
 	} else {
@@ -326,7 +326,7 @@ func (d Date) String() string {
 
 func (d Date) GoString() string {
 	var b strings.Builder
-	b.WriteString(reflect.TypeOf(d).String())
+	b.WriteString(reflect.TypeFor[Date]().String())
 	b.WriteString("(")
 	if d <= 0 {
 		b.WriteString(strconv.FormatInt(int64(d), 10))
