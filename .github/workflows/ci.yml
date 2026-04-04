@@ -50,19 +50,6 @@ jobs:
           private-key: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
           repositories: ottrec-data
 
-      - name: Configure app
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{steps.app-token.outputs.token}}
-          script: |
-            const username = `${{steps.app-token.outputs.app-slug}}[bot]`
-            const {data: {id: id}} = await octokit.rest.users.getByUsername({username})
-            const email = `${id}+${username}@users.noreply.github.com`
-            core.exportVariable('GIT_AUTHOR_NAME', username)
-            core.exportVariable('GIT_AUTHOR_EMAIL', email)
-            core.exportVariable('GIT_COMMITTER_NAME', username)
-            core.exportVariable('GIT_COMMITTER_EMAIL', email)
-
       - name: Checkout cache
         uses: actions/checkout@v6
         with:
@@ -71,8 +58,6 @@ jobs:
           path: cache
           filter: blob:none
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token || github.token }}
-          persist-credentials: true
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -89,12 +74,16 @@ jobs:
           GEOCODIO_APIKEY: ${{ secrets.geocodio_apikey }}
           OTTCA_SCRAPER_SECRET: ${{ secrets.ottca_scraper_secret }}
 
-      - name: Push cache
+      - name: Commit cache
         run:
           git -C cache add . && {
             git -C cache diff --cached --quiet ||
-            git -C cache commit -m "${{(github.event_name=='schedule'&&'full')||(github.event_name=='workflow_dispatch'&&'manual')||'partial'}} update (${{github.event_name}} ${{github.repository}}@${{github.sha}})" ; } &&
-          git -C cache push
+            git -C cache -c user.name=dummy -c user.email=dummy commit -m "${{(github.event_name=='schedule'&&'full')||(github.event_name=='workflow_dispatch'&&'manual')||'partial'}} update (${{github.event_name}} ${{github.repository}}@${{github.sha}})" ; }
+
+      - name: Push cache
+        run: go run github.com/pgaskin/push-signed-commits@v0.0.2 -C cache pgaskin/ottrec-data cache HEAD@{u}..HEAD
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
 
   scrape:
     needs: [test, cache]
@@ -113,20 +102,6 @@ jobs:
           repositories: ottrec-data
         if: ${{ github.repository == 'pgaskin/ottrec' }}
 
-      - name: Configure app
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{steps.app-token.outputs.token}}
-          script: |
-            const username = `${{steps.app-token.outputs.app-slug}}[bot]`
-            const {data: {id: id}} = await octokit.rest.users.getByUsername({username})
-            const email = `${id}+${username}@users.noreply.github.com`
-            core.exportVariable('GIT_AUTHOR_NAME', username)
-            core.exportVariable('GIT_AUTHOR_EMAIL', email)
-            core.exportVariable('GIT_COMMITTER_NAME', username)
-            core.exportVariable('GIT_COMMITTER_EMAIL', email)
-        if: ${{ github.repository == 'pgaskin/ottrec' }}
-
       - name: Checkout cache
         uses: actions/checkout@v6
         with:
@@ -135,8 +110,6 @@ jobs:
           path: cache
           filter: blob:none
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token || github.token }}
-          persist-credentials: true
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -152,10 +125,14 @@ jobs:
           -export.json data/data.json
           -export.errors errors.txt
 
-      - name: Push data
+      - name: Commit data
         run: |
           git -C data add . && {
             git -C data diff --cached --quiet ||
-            git -C data commit -m "update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, $(git -C cache rev-parse HEAD))"$'\n'"$(<errors.txt)" ; } &&
-          git -C data push
+            git -C data -c user.name=dummy -c user.email=dummy commit -m "update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, $(git -C cache rev-parse HEAD))"$'\n'"$(<errors.txt)" ; }
+
+      - name: Push data
+        run: go run github.com/pgaskin/push-signed-commits@v0.0.2 -C data pgaskin/ottrec-data v1 HEAD@{u}..HEAD
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
         if: ${{ github.repository == 'pgaskin/ottrec' }}
