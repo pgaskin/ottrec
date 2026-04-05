@@ -42,14 +42,6 @@ jobs:
       - name: Checkout scraper
         uses: actions/checkout@v6
 
-      - name: Authorize app
-        uses: actions/create-github-app-token@v3
-        id: app-token
-        with:
-          app-id: ${{ vars.OTTREC_SCRAPER_APP_ID }}
-          private-key: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
-          repositories: ottrec-data
-
       - name: Checkout cache
         uses: actions/checkout@v6
         with:
@@ -75,15 +67,9 @@ jobs:
           OTTCA_SCRAPER_SECRET: ${{ secrets.ottca_scraper_secret }}
 
       - name: Commit cache
-        run:
-          git -C cache add . && {
-            git -C cache diff --cached --quiet ||
-            git -C cache -c user.name=dummy -c user.email=dummy commit -m "${{(github.event_name=='schedule'&&'full')||(github.event_name=='workflow_dispatch'&&'manual')||'partial'}} update (${{github.event_name}} ${{github.repository}}@${{github.sha}})" ; }
-
-      - name: Push cache
-        run: go run github.com/pgaskin/push-signed-commits@v0.0.2 -C cache pgaskin/ottrec-data cache HEAD@{u}..HEAD
+        run: git -C cache add . && go run github.com/pgaskin/push-signed-commits@v0.0.4 -C cache -app ${{ vars.OTTREC_SCRAPER_APP_ID }} -commit pgaskin/ottrec-data cache "${{(github.event_name=='schedule'&&'full')||(github.event_name=='workflow_dispatch'&&'manual')||'partial'}} update (${{github.event_name}} ${{github.repository}}@${{github.sha}})"
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          APP_PRIVATE_KEY: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
 
   scrape:
     needs: [test, cache]
@@ -92,15 +78,6 @@ jobs:
     steps:
       - name: Checkout scraper
         uses: actions/checkout@v6
-
-      - name: Authorize app
-        uses: actions/create-github-app-token@v3
-        id: app-token
-        with:
-          app-id: ${{ vars.OTTREC_SCRAPER_APP_ID }}
-          private-key: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
-          repositories: ottrec-data
-        if: ${{ github.repository == 'pgaskin/ottrec' }}
 
       - name: Checkout cache
         uses: actions/checkout@v6
@@ -126,13 +103,7 @@ jobs:
           -export.errors errors.txt
 
       - name: Commit data
-        run: |
-          git -C data add . && {
-            git -C data diff --cached --quiet ||
-            git -C data -c user.name=dummy -c user.email=dummy commit -m "update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, $(git -C cache rev-parse HEAD))"$'\n'"$(<errors.txt)" ; }
-
-      - name: Push data
-        run: go run github.com/pgaskin/push-signed-commits@v0.0.2 -C data pgaskin/ottrec-data v1 HEAD@{u}..HEAD
+        run: git -C data add . && go run github.com/pgaskin/push-signed-commits@v0.0.4 -C data -app ${{ vars.OTTREC_SCRAPER_APP_ID }} -commit pgaskin/ottrec-data data "update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, $(git -C cache rev-parse HEAD))"$'\n'"$(<errors.txt)"
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          APP_PRIVATE_KEY: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
         if: ${{ github.repository == 'pgaskin/ottrec' }}
