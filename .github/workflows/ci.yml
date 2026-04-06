@@ -51,8 +51,7 @@ jobs:
           filter: blob:none
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
@@ -66,10 +65,15 @@ jobs:
           GEOCODIO_APIKEY: ${{ secrets.geocodio_apikey }}
           OTTCA_SCRAPER_SECRET: ${{ secrets.ottca_scraper_secret }}
 
-      - name: Commit cache
-        run: git -C cache add . && go run github.com/pgaskin/push-signed-commits@v0.0.4 -C cache -app ${{ vars.OTTREC_SCRAPER_APP_ID }} -commit pgaskin/ottrec-data cache "${{(github.event_name=='schedule'&&'full')||(github.event_name=='workflow_dispatch'&&'manual')||'partial'}} update (${{github.event_name}} ${{github.repository}}@${{github.sha}})"
-        env:
-          APP_PRIVATE_KEY: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
+      - run: git -C cache add .
+      - uses: pgaskin/push-signed-commits@v0.0.6
+        with:
+          path: cache
+          commit-message: ${{(github.event_name=='schedule'&&'full')||(github.event_name=='workflow_dispatch'&&'manual')||'partial'}} update (${{github.event_name}} ${{github.repository}}@${{github.sha}})
+          repository: pgaskin/ottrec-data
+          branch: cache
+          app-id: ${{ vars.OTTREC_SCRAPER_APP_ID }}
+          app-key: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
 
   scrape:
     needs: [test, cache]
@@ -88,8 +92,7 @@ jobs:
           filter: blob:none
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
@@ -102,8 +105,18 @@ jobs:
           -export.json data/data.json
           -export.errors errors.txt
 
-      - name: Commit data
-        run: git -C data add . && go run github.com/pgaskin/push-signed-commits@v0.0.4 -C data -app ${{ vars.OTTREC_SCRAPER_APP_ID }} -commit pgaskin/ottrec-data v1 "update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, $(git -C cache rev-parse HEAD))"$'\n'"$(<errors.txt)"
-        env:
-          APP_PRIVATE_KEY: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
+      - run: git -C data add .
+      - run: printf '%s\n' 'errors<<EOF' "$(<errors.txt)" 'EOF' 'cache<<EOF' "$(git -C cache rev-parse HEAD)" 'EOF' | tee -a "$GITHUB_OUTPUT"
+        id: meta
+      - uses: pgaskin/push-signed-commits@v0.0.6
+        with:
+          path: data
+          commit-message: |
+            update (${{github.event_name}} ${{github.repository}}@${{github.sha}}, ${{steps.meta.outputs.cache}})
+
+            ${{steps.meta.outputs.errors}}
+          repository: pgaskin/ottrec-data
+          branch: v1
+          app-id: ${{ vars.OTTREC_SCRAPER_APP_ID }}
+          app-key: ${{ secrets.OTTREC_SCRAPER_PRIVATE_KEY }}
         if: ${{ github.repository == 'pgaskin/ottrec' }}
