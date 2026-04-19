@@ -66,7 +66,7 @@ jobs:
           OTTCA_SCRAPER_SECRET: ${{ secrets.ottca_scraper_secret }}
 
       - run: git -C cache add .
-      - uses: pgaskin/push-signed-commits@v0.0.7
+      - uses: pgaskin/push-signed-commits@v1
         with:
           path: cache
           commit-message: ${{(github.event_name=='schedule'&&'full')||(github.event_name=='workflow_dispatch'&&'manual')||'partial'}} update (${{github.event_name}} ${{github.repository}}@${{github.sha}})
