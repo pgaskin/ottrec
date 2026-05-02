@@ -815,14 +815,24 @@ func scrapeScheduleGroup(doc *goquery.Document, facilityName, label string, cont
 	if scheduleChangeH := content.Find("h1,h2,h3,h4,h5,h6").FilterFunction(func(i int, s *goquery.Selection) bool {
 		return strings.HasPrefix(strings.TrimSpace(strings.ToLower(s.Text())), "schedule change")
 	}); scheduleChangeH.Length() == 1 {
-		if sel := scheduleChangeH.Next(); sel.Is("ul") {
+		if sel := scheduleChangeH.Parent(); sel.Is(".text-formatted.field.field--name-field-body.field--type-text-long.field--label-hidden.field__item") && sel.Children().First().IsSelection(scheduleChangeH) {
+			scheduleChangeH.Remove()
 			if raw, err := sel.Html(); err == nil {
-				group.ScheduleChangesHtml = "<ul>" + raw + "</ul>"
+				group.ScheduleChangesHtml = strings.TrimSpace(raw)
 			} else {
 				xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: %v", label, err))
 			}
 		} else {
-			xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: header is not followed by a list", label))
+			slog.Warn("schedule changes is not a field, falling back to extracting the next ul element")
+			if sel := scheduleChangeH.Next(); sel.Is("ul") {
+				if raw, err := sel.Html(); err == nil {
+					group.ScheduleChangesHtml = "<ul>" + raw + "</ul>"
+				} else {
+					xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: %v", label, err))
+				}
+			} else {
+				xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: header is not followed by a list", label))
+			}
 		}
 	} else if scheduleChangeH.Length() != 0 {
 		xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: multiple selector matches found", label))
