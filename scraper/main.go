@@ -812,13 +812,14 @@ func scrapeScheduleGroup(doc *goquery.Document, facilityName, label string, cont
 	group.Label = label
 	group.XTitle = extractScheduleGroupTitle(label)
 
-	if scheduleChangeH := content.Find("h1,h2,h3,h4,h5,h6").FilterFunction(func(i int, s *goquery.Selection) bool {
+	var scheduleChangesParts []string
+	for _, scheduleChangeH := range content.Find("h1,h2,h3,h4,h5,h6").FilterFunction(func(i int, s *goquery.Selection) bool {
 		return strings.HasPrefix(strings.TrimSpace(strings.ToLower(s.Text())), "schedule change")
-	}); scheduleChangeH.Length() == 1 {
+	}).EachIter() {
 		if sel := scheduleChangeH.Parent(); sel.Is(".text-formatted.field.field--name-field-body.field--type-text-long.field--label-hidden.field__item") && sel.Children().First().IsSelection(scheduleChangeH) {
 			scheduleChangeH.Remove()
 			if raw, err := sel.Html(); err == nil {
-				group.ScheduleChangesHtml = strings.TrimSpace(raw)
+				scheduleChangesParts = append(scheduleChangesParts, strings.TrimSpace(raw))
 			} else {
 				xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: %v", label, err))
 			}
@@ -826,7 +827,7 @@ func scrapeScheduleGroup(doc *goquery.Document, facilityName, label string, cont
 			slog.Warn("schedule changes is not a field, falling back to extracting the next ul element")
 			if sel := scheduleChangeH.Next(); sel.Is("ul") {
 				if raw, err := sel.Html(); err == nil {
-					group.ScheduleChangesHtml = "<ul>" + raw + "</ul>"
+					scheduleChangesParts = append(scheduleChangesParts, "<ul>"+raw+"</ul>")
 				} else {
 					xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: %v", label, err))
 				}
@@ -834,9 +835,8 @@ func scrapeScheduleGroup(doc *goquery.Document, facilityName, label string, cont
 				xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: header is not followed by a list", label))
 			}
 		}
-	} else if scheduleChangeH.Length() != 0 {
-		xerrs = append(xerrs, fmt.Sprintf("parse schedule changes for schedule group %q: multiple selector matches found", label))
 	}
+	group.ScheduleChangesHtml = strings.Join(scheduleChangesParts, "\n")
 
 	for _, btn := range content.Find(".btn").EachIter() {
 		tmp := btn.Clone()
